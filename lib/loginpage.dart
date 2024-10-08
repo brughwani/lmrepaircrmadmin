@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 //import 'package:';
 import 'package:http/http.dart' as http;
 class MyHomePage extends StatefulWidget {
@@ -17,39 +20,70 @@ class _MyHomePageState extends State<MyHomePage> {
     selectedValue = 'Admin';
   }
 
-  
+Future<bool> validateEmployeeCode(String employeeCode) async {
+  final apiKey = dotenv.env['AIRTABLE_API_KEY'];
+  final baseId = dotenv.env['AIRTABLE_BASE_ID'];
+  final tableName = dotenv.env['AIRTABLE_TABLE_NAME']; // Replace with your Airtable table name
 
-  Future<void> loginUser(String phoneNumber, String password,String role) async {
-    // Call your Node.js backend for login
-    final response = await http.post(
-      Uri.parse('localhost:3000/loginUser'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, String>{
-        'phoneNumber': phoneNumber,
-        'password': password,
-        'role': selectedValue!
-      }),
+  final url = 'https://api.airtable.com/v0/$baseId/$tableName?filterByFormula={empcode}="$employeeCode"'; // Use a filter formula to check the employee code
+
+  final response = await http.get(
+    Uri.parse(url),
+    headers: {
+      'Authorization': 'Bearer $apiKey',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    final data = json.decode(response.body);
+    if (data['records'].isNotEmpty) {
+      // Employee code exists
+      return true;
+    } else {
+      // Employee code does not exist
+      return false;
+    }
+  } else {
+    print('Failed to fetch data: ${response.statusCode}');
+    return false; // Error during Airtable fetch
+  }
+}
+
+Future<bool> signInWithEmployeeCode(String employeeCode, String password) async {
+  String username = employeeCode+"@lmcrm.in";
+  try {
+    // Step 1: Sign in with Firebase
+    UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: username,
+      password: password,
     );
 
-    if (response.statusCode == 200) {
-      // Get custom token from response
-      final token = jsonDecode(response.body)['token'];
+    User? user = userCredential.user;
+    if (user != null) {
+      // Step 2: Validate the employee code against Airtable
+      bool isValidCode = await validateEmployeeCode(employeeCode);
 
-      // Sign in with custom token
-      
-     // Navigator.of(context).push(MaterialPageRoute(builder: (context)=>MyApp()));
-      
+      if (isValidCode) {
+        print('User logged in successfully.');
+        return true; // Login successful
+      } else {
+        print('Invalid employee code.');
+        return false; // Invalid employee code
+      }
     } else {
-      // Handle error
-      print('Error: ${response.body}');
+      print('User not found.');
+      return false; // User not found
     }
+  } on FirebaseAuthException catch (e) {
+    print('Error: ${e.message}');
+    return false; // Error during authentication
   }
+}
+  
 
   @override
   Widget build(BuildContext context) {
-    TextEditingController phoneNumber=TextEditingController();
+    TextEditingController username=TextEditingController();
     TextEditingController password=TextEditingController();
     return Scaffold(
       appBar: AppBar(
@@ -60,9 +94,8 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             TextFormField(
-              controller: phoneNumber,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(labelText: "Phone Number"),
+              controller: username,
+              decoration: InputDecoration(labelText: "Username"),
 
             ),
             TextFormField(
@@ -73,33 +106,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 labelText: "Password"),
 
             ),
-            DropdownButton(
-              hint: Text('Select Role'),
-              value: selectedValue,
-              items: [
-              DropdownMenuItem(
-                child: Text('Karigar'),
-                value: 'Karigar',
-                ),
-              DropdownMenuItem(
-                child: Text('Support'),
-                value: 'Support',
-                ),
-                 DropdownMenuItem(
-                child: Text('Admin'),
-                value: 'Admin',
-                ),
-          ], onChanged: (value) {
-            setState(() {
-              selectedValue = value;
-            });
-          },),
+         
             
             Row(
               children: [
           
             ElevatedButton(
-              onPressed: () => loginUser(phoneNumber.text,password.text,selectedValue!),
+              onPressed: () => signInWithEmployeeCode(username.text, password.text),
               child: Text('Login'),
             ),
           ],

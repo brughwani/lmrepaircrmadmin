@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:lmrepaircrmadmin/addemployee.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
 class CRMDashboard extends StatefulWidget {
   
@@ -15,21 +16,14 @@ class CRMDashboard extends StatefulWidget {
 }
  
 class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderStateMixin {
-  String? selectedValue;
+  
   String? selectedstatus;
 
   final tableName1 = 'Employees';
   final tableName2= 'Products';
+ 
  DateTime? selectedDate;
-TextEditingController mobile=TextEditingController();
-  TextEditingController phoneNumber=TextEditingController();
-  TextEditingController password=TextEditingController();
-  TextEditingController Name=TextEditingController();
-  TextEditingController firstName=TextEditingController();
-  TextEditingController lastName=TextEditingController();
-  TextEditingController address=TextEditingController();
-  TextEditingController personalMobileNumber=TextEditingController();
-  TextEditingController salary=TextEditingController();
+
   Map<String, List<String>> productMap = {}; // Map for category to products
   List<String> availableProducts = []; // Products available based on selected categories
 
@@ -44,6 +38,8 @@ TextEditingController mobile=TextEditingController();
   final TextEditingController dateController = TextEditingController();
   final TextEditingController fromdateController = TextEditingController();
 final TextEditingController todateController = TextEditingController();
+final TextEditingController Name = TextEditingController();
+final TextEditingController mobile = TextEditingController();
 final double narrowScreenWidth = 600;
   final double mediumScreenWidth = 1000;
   String? selectedCategory;
@@ -202,33 +198,7 @@ final double narrowScreenWidth = 600;
     
   }
 
- Future<void> createRecord() async {
-    final String url = 'crmvercelfun-git-main-brughwanis-projects.vercel.app/addemployee';
-    // Prepare the data to be sent
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        "fields": {
-          "First Name": firstName.text,
-          "Last Name": lastName.text,
-          "Address": address.text,
-          "Phone Number": phoneNumber.text,
-          "Password": password.text,
-          "Personal Mobile Number": personalMobileNumber.text,
-          "Salary": salary.text
-        },
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      print('Record created successfully: ${response.body}');
-    } else {
-      print('Failed to create record: ${response.statusCode} ${response.body}');
-    }
-  }
+ 
 
  Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -252,13 +222,7 @@ dateController.text = "${picked.toLocal()}".split(' ')[0]; // Update the text fi
 
   @override
   void dispose() {
-    firstName.dispose();
-    lastName.dispose();
-    address.dispose();
-    phoneNumber.dispose();
-    password.dispose();
-    personalMobileNumber.dispose();
-    salary.dispose();
+   
     _tabController?.dispose(); // Dispose the controller to avoid memory leaks
     super.dispose();
   }
@@ -279,59 +243,8 @@ dateController.text = "${picked.toLocal()}".split(' ')[0]; // Update the text fi
       body: TabBarView(
         controller: _tabController,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-            TextFormField(
-              controller:firstName,
-              decoration: InputDecoration(labelText: 'First Name')
-            ),
-            TextFormField(
-              controller:lastName,
-              decoration: InputDecoration(labelText: 'Last Name')),
-            TextFormField(
-              controller:phoneNumber,
-              decoration: InputDecoration(labelText: 'Mobile Number'),
-            keyboardType: TextInputType.phone),
-            TextFormField(
-              controller: address,
-              decoration: InputDecoration(labelText: 'Address'),
-            keyboardType: TextInputType.streetAddress),
-            TextFormField(
-              controller: password,
-              decoration: InputDecoration(labelText: 'password'),
-            keyboardType: TextInputType.visiblePassword),
-            TextFormField(
-              controller: personalMobileNumber,
-              decoration: InputDecoration(labelText: 'Personal Mobile Number'),
-            keyboardType: TextInputType.phone),
-            TextFormField(
-              controller: salary,
-              decoration: InputDecoration(labelText: 'Salary'),
-            keyboardType: TextInputType.number),
-             DropdownButton(
-              hint: Text('Select Role'),
-              value: selectedValue,
-              items: [
-              DropdownMenuItem(
-                child: Text('Karigar'),
-                value: 'Karigar',
-                ),
-              DropdownMenuItem(
-                child: Text('Support'),
-                value: 'Support',
-                ),
-                
-          ], onChanged: (value) {
-            setState(() {
-              selectedValue = value;
-            });
-          },),
-            
-            ElevatedButton(onPressed: (){
-            }, child: Text('Add Employee'))
-          ],),
-          SingleChildScrollView(
+          AddEmployee(),
+           SingleChildScrollView(
             child: Column(
               children: [
                 Row(children: [
@@ -468,8 +381,10 @@ dateController.text = "${picked.toLocal()}".split(' ')[0]; // Update the text fi
                 ],)
               ]
             ),
-          )        ],
-      ),
+          )        ]
+          ),
+         
+      
     );
   }
 }

@@ -24,16 +24,17 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
  
  DateTime? selectedDate;
 
-  Map<String, List<String>> productMap = {}; // Map for category to products
+
   List<String> availableProducts = []; // Products available based on selected categories
 
   //List<dynamic> countryCityPairs = []; // Will hold the loaded JSON data
-  String? selecteddealer; // Selected country
+  String? selecteddealer; // Selected dealer
   String? selectedCity; // Selected city
   //List<String> cities = []; // Cities based on the selected country
-  Set<String> locations = {};
-  List<dynamic> dealerCityPairs = [];
-  List<String> customerNames = [];
+
+  List<String> products =[];
+  List<String> locations=[];
+  List<String> dealerNames = [];
   TabController? _tabController;
   final TextEditingController dateController = TextEditingController();
   final TextEditingController fromdateController = TextEditingController();
@@ -48,7 +49,88 @@ final double narrowScreenWidth = 600;
   List<String> selectedProducts = [];
    
   List<String> categories = [];
-  Map<String, List<String>> productsByCategory = {};
+ // Map<String, List<String>> productsByCategory = {};
+
+  Future<void> fetchCategories() async {
+    final response = await http.get(
+      Uri.parse('https://crmvercelfun.vercel.app/api/category'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> categoryList = json.decode(response.body);
+      setState(() {
+        categories = categoryList.map((category) => category.toString()).toList();
+      });
+    } else {
+      throw Exception('Failed to load categories');
+    }
+  }
+
+  Future<void> fetchProductsForCategory(String categoryId) async {
+    final response = await http.get(
+      Uri.parse('https://crmvercelfun.vercel.app/api/product?category=$categoryId'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
+//   print(response.body);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> productList = json.decode(response.body);
+      setState(() {
+        products = productList.map((e) => e['productName'].toString()).toList();
+        selectedProduct = null; // Reset product selection when category changes
+      });
+    } else {
+      throw Exception('Failed to load products');
+    }
+  }
+
+  Future<void> fetchlocation() async {
+    final response = await http.get(
+      Uri.parse('https://crmvercelfun.vercel.app/api/location'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
+if(response.statusCode == 200)
+  {
+    final List<dynamic> locationlist=jsonDecode(response.body);
+    setState(() {
+      locations=locationlist.map((location) => location.toString()).toList();
+    });
+  }
+else
+  {
+    throw Exception("Failed to load locations");
+  }
+  }
+
+  Future<void> fetchdealer(String loc) async
+  {
+    final response= await http.get( Uri.parse("https://crmvercelfun.vercel.app/api/dealer?locality=$loc"),headers: {
+      'Content-Type': 'application/json',
+    },
+    );
+
+    if(response.statusCode==200)
+      {
+        final List<dynamic> dealers=jsonDecode(response.body);
+        setState(() {
+          dealerNames=dealers.map((dealer)=>dealer['dealerName'].toString()).toList();
+        });
+      }
+    else
+      {
+        throw Exception("Failed to get dealers");
+      }
+
+
+  }
+
 // Future<void> fetchproductcategories() async {
 //   final headers = {
 //     'Authorization': 'Bearer $apiKey',
@@ -191,7 +273,10 @@ final double narrowScreenWidth = 600;
   void initState() {
     super.initState();
   //  loadJsonData();
-    _tabController = TabController(length: 2, vsync: this); // Initialize TabController
+    _tabController = TabController(length: 2, vsync: this);
+    // Initialize TabController
+     fetchlocation();
+     fetchCategories();
   //fetchCategories();
   // fetchCategoriesAndProducts();
   // fetchproductcategories();
@@ -308,82 +393,151 @@ dateController.text = "${picked.toLocal()}".split(' ')[0]; // Update the text fi
                 decoration: InputDecoration(labelText: 'Mobile Number',border: OutlineInputBorder()),
               ),
             ),
-               // First Dropdown (Countries)
-            DropdownButton<String>(
-              hint: Text('Select location'),
-              value: selectedCity,
-              onChanged: (value) {
-                if(value!=null && value != selectedCity)
-                {
-                setState(() {
-                  selectedCity = value;
-                  // Filter cities based on the selected country
-                  customerNames = dealerCityPairs.where((pair) => pair['location'] == selectedCity)
-                      .map((pair) => pair['Customer name'].toString())
-                      .toList();
-                  // Reset the selected dealer when city changes
-                  selecteddealer = null;
-                });
-                }
-              },
-              items: locations.map<DropdownMenuItem<String>>((String city) {
-                return DropdownMenuItem<String>(
-                  value: city,
-                  child: Text(city),
-                );
-              }).toList(),
-            ),
-            SizedBox(height: 20),
-            
-            // Second Dropdown (Cities)
-            DropdownButton<String>(
-              hint: Text('Select dealer'),
-              value: selecteddealer,
-              onChanged: (value) {
-                if(value!=null)
-                {
-                setState(() {
-                   
-                  selecteddealer = value;
-                
-                  // Reset customer selection    
-                });
-                }
-              },
-              items: customerNames.map<DropdownMenuItem<String>>((String dealer) {
-                return DropdownMenuItem<String>(
-                  value: dealer,
-                  child: Text(dealer),
-                );
-              }).toList(),
-            ),
+
+
+            // DropdownButton<String>(
+            //   hint: Text('Select location'),
+            //   value: selectedCity,
+            //   onChanged: (value) {
+            //     if(value!=null && value != selectedCity)
+            //     {
+            //     setState(() {
+            //       selectedCity = value;
+            //       // Filter cities based on the selected country
+            //       customerNames = dealerCityPairs.where((pair) => pair['location'] == selectedCity)
+            //           .map((pair) => pair['Customer name'].toString())
+            //           .toList();
+            //       // Reset the selected dealer when city changes
+            //       selecteddealer = null;
+            //     });
+            //     }
+            //   },
+            //   items: locations.map<DropdownMenuItem<String>>((String city) {
+            //     return DropdownMenuItem<String>(
+            //       value: city,
+            //       child: Text(city),
+            //     );
+            //   }).toList(),
+            // ),
+            // SizedBox(height: 20),
+            //
+            // // Second Dropdown (Cities)
+            // DropdownButton<String>(
+            //   hint: Text('Select dealer'),
+            //   value: selecteddealer,
+            //   onChanged: (value) {
+            //     if(value!=null)
+            //     {
+            //     setState(() {
+            //
+            //       selecteddealer = value;
+            //
+            //       // Reset customer selection
+            //     });
+            //     }
+            //   },
+            //   items: customerNames.map<DropdownMenuItem<String>>((String dealer) {
+            //     return DropdownMenuItem<String>(
+            //       value: dealer,
+            //       child: Text(dealer),
+            //     );
+            //   }).toList(),
+            // ),
                 ],
                 ),
-            
-                Row(children: [
-                  Expanded(
-                    child:  MultiSelectDialogField(
-              items: productMap.keys.map((category) => MultiSelectItem(category, category)).toList(),
-              title: Text("Select Categories"),
-              selectedColor: Colors.blue,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.blue),
-              ),
-              buttonIcon: Icon(Icons.arrow_drop_down_circle),
-              onConfirm: (values) {
-                setState(() {
-                  selectedCategories = values.cast<String>();
-                 // updateAvailableProducts(); // Update products based on selected categories
-                });
-              },
-            ),)
-                ],)
-              ]
-            ),
-          )        ]
+                IntrinsicWidth(
+                  child: Row(
+                    children: [
+                      Expanded(
+                  flex: 1,
+                        child: DropdownButton(
+                          value: selectedCity,
+                          onChanged: (newValue) {
+
+                            setState(() {
+                              selectedCity = newValue as String?;
+                            });
+                            if(newValue!=null)
+                              {
+                                fetchdealer(selectedCity.toString());
+                              }
+
+                          },
+                          items: locations.map<DropdownMenuItem<String>>((String loc) {
+                            return DropdownMenuItem<String>(
+                              value: loc,
+                              child: Text(loc),
+                            );
+                          }).toList(),
+
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child:  DropdownButton(
+            value: selecteddealer,
+            items: dealerNames.map<DropdownMenuItem<String>>((String d) {
+              return DropdownMenuItem<String>(
+                  value: d,
+                  child: Text(d, overflow: TextOverflow.ellipsis));
+            }).toList()
+            , onChanged: (dealerselected) {
+          setState(() {
+            selecteddealer = dealerselected;
+          });
+        }
+        )
+
+                        ),
+
+
+
+                      Expanded(
+                          flex: 1,
+                        child: DropdownButton(
+                          value: selectedProduct,
+
+                          items:products.map<DropdownMenuItem<String>>((String product){
+                            return DropdownMenuItem<String>(value:product,child:Text(product,overflow: TextOverflow.ellipsis));}).toList()
+                          , onChanged:(productselected)
+                                            {
+                        setState(() {
+                          selectedProduct=productselected;
+                        });
+                                            }
+                                            ),
+                      ),
+                    Expanded(
+                      flex: 1,
+                      child: DropdownButton(
+                        value: selectedCategory,
+                        onChanged: (newValue) {
+
+                          setState(() {
+                            selectedCategory = newValue as String?;
+                          });
+                          if (newValue != null) {
+                            fetchProductsForCategory(newValue); // Fetch products for the selected category
+                          }
+                        },
+                        items: categories.map<DropdownMenuItem<String>>((String category) {
+                          return DropdownMenuItem<String>(
+                            value: category,
+                            child: Text(category),
+                          );
+                        }).toList(),
+
+                      ),
+                    ),
+
+                                ]
+                              ),
+                ),
+               ]
           ),
-         
+           )
+         ]
+           )
       
     );
   }

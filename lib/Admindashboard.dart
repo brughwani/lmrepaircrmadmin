@@ -1,544 +1,371 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:dio/dio.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:lmrepaircrmadmin/addemployee.dart';
-import 'package:multi_select_flutter/multi_select_flutter.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
+
 class CRMDashboard extends StatefulWidget {
-  
   @override
   State<CRMDashboard> createState() => _CRMDashboardState();
-
 }
- 
+
 class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderStateMixin {
-  
-  String? selectedstatus;
-
-  final tableName1 = 'Employees';
-  final tableName2= 'Products';
- 
- DateTime? selectedDate;
-
-
-  List<String> availableProducts = []; // Products available based on selected categories
-
-  //List<dynamic> countryCityPairs = []; // Will hold the loaded JSON data
-  String? selecteddealer; // Selected dealer
-  String? selectedCity; // Selected city
-  //List<String> cities = []; // Cities based on the selected country
-
-  List<String> products =[];
-  List<String> locations=[];
-  List<String> dealerNames = [];
-  TabController? _tabController;
-  final TextEditingController dateController = TextEditingController();
-  final TextEditingController fromdateController = TextEditingController();
-final TextEditingController todateController = TextEditingController();
-final TextEditingController Name = TextEditingController();
-final TextEditingController mobile = TextEditingController();
-final double narrowScreenWidth = 600;
-  final double mediumScreenWidth = 1000;
+  String? selectedStatus;
+  String? selectedDealer;
+  String? selectedCity;
+  String? selectedEmployee;
   String? selectedCategory;
   String? selectedProduct;
-  List<String> selectedCategories = [];
-  List<String> selectedProducts = [];
-   
+  DateTime? selectedDate;
+
+  List<String> employees = [];
+  List<String> products = [];
+  List<String> locations = [];
+  List<String> dealerNames = [];
   List<String> categories = [];
- // Map<String, List<String>> productsByCategory = {};
+
+  final TextEditingController dateController = TextEditingController();
+  final TextEditingController fromDateController = TextEditingController();
+  final TextEditingController toDateController = TextEditingController();
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController mobileController = TextEditingController();
+
+  TabController? _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    fetchLocation();
+    fetchCategories();
+    fetchEmployees();
+  }
+
+  Future<void> fetchEmployees() async {
+    final response = await http.get(
+      Uri.parse('https://crmvercelfun.vercel.app/api/getallkarigar?Role=Karigar'),
+      headers: {'Content-Type': 'application/json'},
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> empList = json.decode(response.body);
+      setState(() {
+        employees = empList.map((emp) => emp['First Name'].toString()).toList();
+      });
+    }
+  }
 
   Future<void> fetchCategories() async {
     final response = await http.get(
       Uri.parse('https://crmvercelfun.vercel.app/api/category'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: {'Content-Type': 'application/json'},
     );
-
     if (response.statusCode == 200) {
       final List<dynamic> categoryList = json.decode(response.body);
       setState(() {
         categories = categoryList.map((category) => category.toString()).toList();
       });
-    } else {
-      throw Exception('Failed to load categories');
     }
   }
 
   Future<void> fetchProductsForCategory(String categoryId) async {
     final response = await http.get(
       Uri.parse('https://crmvercelfun.vercel.app/api/product?category=$categoryId'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: {'Content-Type': 'application/json'},
     );
-//   print(response.body);
-
     if (response.statusCode == 200) {
       final List<dynamic> productList = json.decode(response.body);
       setState(() {
         products = productList.map((e) => e['productName'].toString()).toList();
-        selectedProduct = null; // Reset product selection when category changes
+        selectedProduct = null;
       });
-    } else {
-      throw Exception('Failed to load products');
     }
   }
 
-  Future<void> fetchlocation() async {
+  Future<void> fetchLocation() async {
     final response = await http.get(
       Uri.parse('https://crmvercelfun.vercel.app/api/location'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: {'Content-Type': 'application/json'},
     );
-if(response.statusCode == 200)
-  {
-    final List<dynamic> locationlist=jsonDecode(response.body);
-    setState(() {
-      locations=locationlist.map((location) => location.toString()).toList();
-    });
-  }
-else
-  {
-    throw Exception("Failed to load locations");
-  }
+    if (response.statusCode == 200) {
+      final List<dynamic> locationList = json.decode(response.body);
+      setState(() {
+        locations = locationList.map((location) => location.toString()).toList();
+      });
+    }
   }
 
-  Future<void> fetchdealer(String loc) async
-  {
-    final response= await http.get( Uri.parse("https://crmvercelfun.vercel.app/api/dealer?locality=$loc"),headers: {
-      'Content-Type': 'application/json',
-    },
+  Future<void> fetchDealer(String loc) async {
+    final response = await http.get(
+      Uri.parse("https://crmvercelfun.vercel.app/api/dealer?locality=$loc"),
+      headers: {'Content-Type': 'application/json'},
     );
-
-    if(response.statusCode==200)
-      {
-        final List<dynamic> dealers=jsonDecode(response.body);
-        setState(() {
-          dealerNames=dealers.map((dealer)=>dealer['dealerName'].toString()).toList();
-        });
-      }
-    else
-      {
-        throw Exception("Failed to get dealers");
-      }
-
-
+    if (response.statusCode == 200) {
+      final List<dynamic> dealers = json.decode(response.body);
+      setState(() {
+        dealerNames = dealers.map((dealer) => dealer['dealerName'].toString()).toList();
+        selectedDealer = null;
+      });
+    }
   }
 
-// Future<void> fetchproductcategories() async {
-//   final headers = {
-//     'Authorization': 'Bearer $apiKey',
-//     'Content-Type': 'application/json',
-//     'view': 'Grid \'view',
-//   };
-//   var dio = Dio();
-//     final url = 'https://api.airtable.com/v0/$baseId/$tableName2?fields[]=Category';
-
-// var response = await dio.request(url,
-//  options: Options(
-//     method: 'GET',
-//     headers: headers,
-//   ),
-// );
-
-// if (response.statusCode == 200) {
-//   print(json.encode(response.data));
-// }
-// else {
-//   print(response.statusMessage);
-// }
-// }
-//  Future<void> fetchCategories() async {
-//     final url = 'https://api.airtable.com/v0/$baseId/$tableName2?fields[]=Category';
-
-//     final response = await http.get(
-//       Uri.parse(url),
-//       headers: {
-//         'Authorization': 'Bearer $apiKey',
-//         'Content-Type': 'application/json',
-//         'view': 'Grid view',
-//       },
-//     );
-
-//     if (response.statusCode == 200) {
-//     final data = jsonDecode(response.body);
-    
-//     // Prepare the list of categories
-//   //  List<String> categoryList = List<String>.from(data['records'].map((record) => record['fields']['Category']));
-    
-//     // Update state after fetching categories
-//     // setState(() {
-//     //   categories = categoryList;
-//     // });
-//   } else {
-//     print('Failed to load categories');
-//   }
-//   }
-//  Future<void> fetchProducts(String category) async {
-//     final url = 'https://api.airtable.com/v0/$baseId/$tableName2?filterByFormula={Category}="$category"&fields[]=Product Name';
-
-//     final response = await http.get(
-//       Uri.parse(url),
-//       headers: {
-//         'Authorization': 'Bearer $apiKey',
-//         'Content-Type': 'application/json',
-//       },
-//     );
-
-//     if (response.statusCode == 200) {
-//       final data = jsonDecode(response.body);
-
-//        List<String> productNames = List<String>.from(data['records'].map((record) => record['fields']['Product Name']));
-//       setState(() {
-//         productsByCategory[category] = productNames;
-//         selectedProduct = null;// Reset selected product when category changes
-//       });
-//     } else {
-//       print('Failed to load products');
-//     }
-//   }
-//   Future<void> fetchCategoriesAndProducts() async {
-//     final url = 'https://api.airtable.com/v0/$baseId/$tableName2';
-
-//     final response = await http.get(
-//       Uri.parse(url),
-//       headers: {
-//         'Authorization': 'Bearer $apiKey',
-//         'Content-Type': 'application/json',
-//         'typecast':'true'
-//       },
-//     );
-
-//     if (response.statusCode == 200) {
-//       final data = jsonDecode(response.body);
-      
-      
-//       // Populate category and product map
-//       for (var record in data['records']) {
-//         String category = record['fields']['Category'];
-//         List<String> products = List<String>.from(record['fields']['Product Name']);
-//         //print(products);
-//         if (!productMap.containsKey(category)) {
-//           productMap[category] = [];
-//         }
-//         productMap[category]!.addAll(products);
-//       }
-//     } else {
-//       print('Failed to load categories and products');
-//     }
-//   }
-// void updateAvailableProducts() {
-//     availableProducts.clear();
-//     for (String category in selectedCategories) {
-//       availableProducts.addAll(productMap[category] ?? []);
-//     }
-//     setState(() {
-//       selectedProducts.clear(); // Reset selected products when categories change
-//     });
-//   }
-// Future<void> loadJsonData() async {
-//     try {
-//       String jsonString = await rootBundle.loadString('assets/customerlist.json');
-//       final Map<String, dynamic> jsonData = json.decode(jsonString);
-      
-//       // Access the "List of Ledgers" key specifically
-//       final List<dynamic> ledgersList = jsonData['List of Ledgers '] ?? [];
-      
-//       setState(() {
-//         // Convert the list to the correct type
-//         dealerCityPairs = List<Map<String, dynamic>>.from(ledgersList);
-        
-//         // Extract unique locations
-//         locations = dealerCityPairs
-//             .map((pair) => pair['location'] as String)
-//             .toSet();
-            
-//         // Sort locations alphabetically
-//         var sortedLocations = locations.toList()..sort();
-//         locations = sortedLocations.toSet();
-//       });
-//     } catch (e) {
-//       print('Error loading JSON: $e');
-//     }
-//   }
- 
-  
-   @override
-  void initState() {
-    super.initState();
-  //  loadJsonData();
-    _tabController = TabController(length: 2, vsync: this);
-    // Initialize TabController
-     fetchlocation();
-     fetchCategories();
-  //fetchCategories();
-  // fetchCategoriesAndProducts();
-  // fetchproductcategories();
-    
-  }
-
- 
-
- Future<void> _selectDate(BuildContext context) async {
+  Future<void> selectDate(BuildContext context, TextEditingController controller) async {
     final DateTime? picked = await showDatePicker(
-      fieldLabelText: 'Purchase date',
       context: context,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
       initialDate: selectedDate ?? DateTime.now(),
-
-      initialDatePickerMode: DatePickerMode.day,
     );
     if (picked != null) {
       setState(() {
         selectedDate = picked;
-dateController.text = "${picked.toLocal()}".split(' ')[0]; // Update the text field with the selected date
-     
+        controller.text = "${picked.toLocal()}".split(' ')[0];
       });
     }
   }
 
-
   @override
   void dispose() {
-   
-    _tabController?.dispose(); // Dispose the controller to avoid memory leaks
+    _tabController?.dispose();
     super.dispose();
   }
+
+  bool validateInput() {
+    if (nameController.text.isEmpty ||
+        mobileController.text.length != 10 ||
+        selectedCity == null ||
+        selectedDealer == null ||
+        selectedCategory == null ||
+        selectedProduct == null ||
+        selectedEmployee == null) {
+      return false;
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
-       appBar: AppBar(
+      appBar: AppBar(
         title: Text('Admin Dashboard'),
         bottom: TabBar(
           controller: _tabController,
           tabs: [
-            Tab(icon:Icon(Icons.person),text: "Employee"),
-            Tab(icon:Icon(Icons.note),text: "Complains and Requests"),
+            Tab(icon: Icon(Icons.person), text: "Employee"),
+            Tab(icon: Icon(Icons.note), text: "Complaints & Requests"),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          AddEmployee(),
-           SingleChildScrollView(
+          Center(child: AddEmployee()),
+          SingleChildScrollView(
+            padding: EdgeInsets.all(16.0),
             child: Column(
               children: [
-                Row(children: [
-                           Expanded(
-                             child: TextFormField(
-                                             controller: fromdateController,
-                                             decoration: InputDecoration(labelText: 'From Date',border: OutlineInputBorder()),
-                                             readOnly: true,
-                                             
-                                             onTap: () => _selectDate(context),
-                                            ),
-                           ),
-                  Expanded(
-                    child: TextFormField(
-                    controller: todateController,
-                    decoration: InputDecoration(labelText: 'To Date'),
-                    readOnly: true,
-                    onTap: () => _selectDate(context),
-                                   ),
-                  ),
-                  Expanded(
-                    child: TextFormField(
-                    controller: dateController,
-                    decoration: InputDecoration(labelText: 'By Date',hintText: 'Complains By Date',border: OutlineInputBorder()),
-                    readOnly: true,
-                    onTap: () => _selectDate(context),
-                                   ),
-                  ),
-                   Expanded(
-                     child: DropdownButton(
-                                   hint: Text('compalint status'),
-                                   value: selectedstatus,
-                                   items: [
-                                   DropdownMenuItem(
-                                     child: Text('Pending'),
-                                     value: 'Pending',
-                                     ),
-                                   DropdownMenuItem(
-                                     child: Text('In progress'),
-                                     value: 'In progess',
-                                     ),
-                     DropdownMenuItem(
-                                     child: Text('Closed'),
-                                     value: 'Closed',
-                                     ),
-                               ], onChanged: (value) {
-                                 setState(() {
-                                   selectedstatus = value;
-                                 });
-                               }
-                               ,),
-                   ),  
-            Expanded(
-              child: TextFormField(controller:Name ,
-              decoration: InputDecoration(labelText: 'Name',border: OutlineInputBorder()),),
-            ),
+                Row(
+                  children: [
                     Expanded(
-              child: TextFormField(
-                controller: mobile,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(labelText: 'Mobile Number',border: OutlineInputBorder()),
-              ),
-            ),
-
-
-            // DropdownButton<String>(
-            //   hint: Text('Select location'),
-            //   value: selectedCity,
-            //   onChanged: (value) {
-            //     if(value!=null && value != selectedCity)
-            //     {
-            //     setState(() {
-            //       selectedCity = value;
-            //       // Filter cities based on the selected country
-            //       customerNames = dealerCityPairs.where((pair) => pair['location'] == selectedCity)
-            //           .map((pair) => pair['Customer name'].toString())
-            //           .toList();
-            //       // Reset the selected dealer when city changes
-            //       selecteddealer = null;
-            //     });
-            //     }
-            //   },
-            //   items: locations.map<DropdownMenuItem<String>>((String city) {
-            //     return DropdownMenuItem<String>(
-            //       value: city,
-            //       child: Text(city),
-            //     );
-            //   }).toList(),
-            // ),
-            // SizedBox(height: 20),
-            //
-            // // Second Dropdown (Cities)
-            // DropdownButton<String>(
-            //   hint: Text('Select dealer'),
-            //   value: selecteddealer,
-            //   onChanged: (value) {
-            //     if(value!=null)
-            //     {
-            //     setState(() {
-            //
-            //       selecteddealer = value;
-            //
-            //       // Reset customer selection
-            //     });
-            //     }
-            //   },
-            //   items: customerNames.map<DropdownMenuItem<String>>((String dealer) {
-            //     return DropdownMenuItem<String>(
-            //       value: dealer,
-            //       child: Text(dealer),
-            //     );
-            //   }).toList(),
-            // ),
-                ],
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: TextFormField(
+                          controller: fromDateController,
+                          decoration: InputDecoration(
+                            labelText: 'From Date',
+                            border: OutlineInputBorder(),
+                          ),
+                          readOnly: true,
+                          onTap: () => selectDate(context, fromDateController),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: TextFormField(
+                          controller: toDateController,
+                          decoration: InputDecoration(
+                            labelText: 'To Date',
+                            border: OutlineInputBorder(),
+                          ),
+                          readOnly: true,
+                          onTap: () => selectDate(context, toDateController),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                IntrinsicWidth(
-                  child: Row(
-                    children: [
-                      Expanded(
-                  flex: 1,
-                        child: DropdownButton(
-                          value: selectedCity,
-                          onChanged: (newValue) {
-
-                            setState(() {
-                              selectedCity = newValue as String?;
-                            });
-                            if(newValue!=null)
-                              {
-                                fetchdealer(selectedCity.toString());
-                              }
-
-                          },
-                          items: locations.map<DropdownMenuItem<String>>((String loc) {
-                            return DropdownMenuItem<String>(
-                              value: loc,
-                              child: Text(loc),
-                            );
-                          }).toList(),
-
-                        ),
-                      ),
-                      Expanded(
-                        flex: 1,
-                        child:  DropdownButton(
-            value: selecteddealer,
-            items: dealerNames.map<DropdownMenuItem<String>>((String d) {
-              return DropdownMenuItem<String>(
-                  value: d,
-                  child: Text(d, overflow: TextOverflow.ellipsis));
-            }).toList()
-            , onChanged: (dealerselected) {
-          setState(() {
-            selecteddealer = dealerselected;
-          });
-        }
-        )
-
-                        ),
-
-
-
-                      Expanded(
-                          flex: 1,
-                        child: DropdownButton(
-                          value: selectedProduct,
-
-                          items:products.map<DropdownMenuItem<String>>((String product){
-                            return DropdownMenuItem<String>(value:product,child:Text(product,overflow: TextOverflow.ellipsis));}).toList()
-                          , onChanged:(productselected)
-                                            {
-                        setState(() {
-                          selectedProduct=productselected;
-                        });
-                                            }
-                                            ),
-                      ),
+                Row(
+                  children: [
                     Expanded(
-                      flex: 1,
-                      child: DropdownButton(
-                        value: selectedCategory,
-                        onChanged: (newValue) {
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: TextFormField(
+                          controller: dateController,
+                          decoration: InputDecoration(
+                            labelText: 'By Date',
+                            hintText: 'Complaints By Date',
+                            border: OutlineInputBorder(),
+                          ),
+                          readOnly: true,
+                          onTap: () => selectDate(context, dateController),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: DropdownButtonFormField<String>(
+                          hint: Text('Complaint Status'),
+                          value: selectedStatus,
+                          onChanged: (value) => setState(() => selectedStatus = value),
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 10),
+                          ),
+                          items: ['Pending', 'In progress', 'Closed']
+                              .map((status) => DropdownMenuItem(
+                            child: Text(status),
+                            value: status,
+                          ))
+                              .toList(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextFormField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Name',
+                      border: OutlineInputBorder(),
+                      errorText: nameController.text.isEmpty ? 'Name is required' : null,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextFormField(
+                    controller: mobileController,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      labelText: 'Mobile Number',
+                      border: OutlineInputBorder(),
+                      errorText: mobileController.text.length != 10 ? 'Enter a valid 10-digit number' : null,
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width*0.2,maxHeight: 170),
 
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: DropdownButtonFormField2(
+                          value: selectedCity,
+                          isExpanded: true,
+                          decoration: InputDecoration(border: OutlineInputBorder()),
+                          onChanged: (newValue) {
+                            setState(() {
+                              selectedCity = newValue;
+                              fetchDealer(selectedCity!);
+                            });
+                          },
+                          items: locations
+                              .map((location) => DropdownMenuItem(
+                            value: location,
+                            child: Text(location,overflow: TextOverflow.visible),
+                          ))
+                              .toList(),
+                        ),
+                      ),
+                    ),
+                    ConstrainedBox
+                      (
+                      constraints:BoxConstraints(maxWidth: MediaQuery.of(context).size.width*0.20,maxHeight: 170),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: DropdownButtonFormField2(
+                          value: selectedDealer,
+                          isExpanded: true,
+                          decoration: InputDecoration(border: OutlineInputBorder()),
+                          onChanged: (value) => setState(() => selectedDealer = value),
+                          items: dealerNames
+                              .map((dealer) => DropdownMenuItem(
+                            value: dealer,
+                            child: Text(dealer, overflow: TextOverflow.visible),
+                          ))
+                              .toList(),
+                        ),
+                      ),
+                    ),
+                    ConstrainedBox
+                      (constraints:BoxConstraints(maxWidth: MediaQuery.of(context).size.width*0.2,maxHeight: 170),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: DropdownButtonFormField2(
+                          decoration: InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
+                          value: selectedCategory,
+                          isExpanded: true,
+                          items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c,overflow: TextOverflow.visible))).toList(),
+                          onChanged: (newValue) {
+                            setState(() {
+                              selectedCategory = newValue as String?;
+                              if (newValue != null) fetchProductsForCategory(newValue);
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                    ConstrainedBox
+                    (constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width*0.2,maxHeight: 170),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: DropdownButtonFormField2(
+                            value: selectedProduct,
+                           isExpanded: true,
+
+                        //    dropdownStyleData: DropdownStyleData(maxHeight: 150),
+                            items:products.map((String product){
+                              return DropdownMenuItem(value:product,child:Text(product,overflow: TextOverflow.visible));}).toList()
+                            , onChanged:(productselected)
+                        {
                           setState(() {
-                            selectedCategory = newValue as String?;
+                            selectedProduct=productselected;
                           });
-                          if (newValue != null) {
-                            fetchProductsForCategory(newValue); // Fetch products for the selected category
-                          }
-                        },
-                        items: categories.map<DropdownMenuItem<String>>((String category) {
-                          return DropdownMenuItem<String>(
-                            value: category,
-                            child: Text(category),
-                          );
-                        }).toList(),
-
+                        }
+                        ),
                       ),
                     ),
 
-                                ]
-                              ),
+                  ],
                 ),
-               ]
+                SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: DropdownButton(
+                        value: selectedEmployee,
+
+                        items:employees.map((String emp){
+                          return DropdownMenuItem(value:emp,child:Text(emp,overflow: TextOverflow.ellipsis));}).toList()
+                        , onChanged:(employi)
+                    {
+                      setState(() {
+                        selectedEmployee=employi;
+                      });
+                    }
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-           )
-         ]
-           )
-      
+        ],
+      ),
     );
   }
 }

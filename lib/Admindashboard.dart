@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:lmrepaircrmadmin/addemployee.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 class CRMDashboard extends StatefulWidget {
   @override
@@ -17,6 +18,8 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
   String? selectedCategory;
   String? selectedProduct;
   DateTime? selectedDate;
+  String? requesttype;
+  var requesttypes=['Installation','Demo','Service','Complain'];
 
   List<String> employees = [];
   List<String> products = [];
@@ -122,6 +125,10 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
       });
     }
   }
+  Future<void> Searchcomplaints() async
+  {
+
+  }
 
   @override
   void dispose() {
@@ -204,7 +211,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                           controller: dateController,
                           decoration: InputDecoration(
                             labelText: 'By Date',
-                            hintText: 'Complaints By Date',
+                            hintText: 'Complaints Solved By Date',
                             border: OutlineInputBorder(),
                           ),
                           readOnly: true,
@@ -259,49 +266,54 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                 ),
                 Row(
                   children: [
-                    ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width*0.2,maxHeight: 170),
+                    Wrap(
+                      direction: Axis.horizontal,
+                      children:[ ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width*0.2,maxHeight: 170),
 
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: DropdownButtonFormField2(
-                          value: selectedCity,
-                          isExpanded: true,
-                          decoration: InputDecoration(border: OutlineInputBorder()),
-                          onChanged: (newValue) {
-                            setState(() {
-                              selectedCity = newValue;
-                              fetchDealer(selectedCity!);
-                            });
-                          },
-                          items: locations
-                              .map((location) => DropdownMenuItem(
-                            value: location,
-                            child: Text(location,overflow: TextOverflow.visible),
-                          ))
-                              .toList(),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: DropdownButtonFormField2(
+                            value: selectedCity,
+                            isExpanded: true,
+                            decoration: InputDecoration(border: OutlineInputBorder()),
+                            onChanged: (newValue) {
+                              setState(() {
+                                selectedCity = newValue;
+                                fetchDealer(selectedCity!);
+                              });
+                            },
+                            items: locations
+                                .map((location) => DropdownMenuItem(
+                              value: location,
+                              child: Text(location,overflow: TextOverflow.visible),
+                            ))
+                                .toList(),
+                          ),
                         ),
                       ),
-                    ),
-                    ConstrainedBox
-                      (
-                      constraints:BoxConstraints(maxWidth: MediaQuery.of(context).size.width*0.20,maxHeight: 170),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: DropdownButtonFormField2(
-                          value: selectedDealer,
-                          isExpanded: true,
-                          decoration: InputDecoration(border: OutlineInputBorder()),
-                          onChanged: (value) => setState(() => selectedDealer = value),
-                          items: dealerNames
-                              .map((dealer) => DropdownMenuItem(
-                            value: dealer,
-                            child: Text(dealer, overflow: TextOverflow.visible),
-                          ))
-                              .toList(),
+                        ConstrainedBox
+                          (
+                          constraints:BoxConstraints(maxWidth: MediaQuery.of(context).size.width*0.20,maxHeight: 170),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: DropdownButtonFormField2(
+                              value: selectedDealer,
+                              isExpanded: true,
+                              decoration: InputDecoration(border: OutlineInputBorder()),
+                              onChanged: (value) => setState(() => selectedDealer = value),
+                              items: dealerNames
+                                  .map((dealer) => DropdownMenuItem(
+                                value: dealer,
+                                child: AutoSizeText(dealer, overflow: TextOverflow.visible),
+                              ))
+                                  .toList(),
+                            ),
+                          ),
                         ),
-                      ),
+    ]
                     ),
+
                     ConstrainedBox
                       (constraints:BoxConstraints(maxWidth: MediaQuery.of(context).size.width*0.2,maxHeight: 170),
                       child: Padding(
@@ -327,10 +339,9 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                         child: DropdownButtonFormField2(
                             value: selectedProduct,
                            isExpanded: true,
-
                         //    dropdownStyleData: DropdownStyleData(maxHeight: 150),
                             items:products.map((String product){
-                              return DropdownMenuItem(value:product,child:Text(product,overflow: TextOverflow.visible));}).toList()
+                              return DropdownMenuItem(value:product,child:AutoSizeText(product,overflow: TextOverflow.visible));}).toList()
                             , onChanged:(productselected)
                         {
                           setState(() {
@@ -343,15 +354,17 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
 
                   ],
                 ),
+                Row(
+                children:[
                 SizedBox(
                   width: MediaQuery.of(context).size.width * 0.2,
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: DropdownButton(
                         value: selectedEmployee,
-
+                        isExpanded: true,
                         items:employees.map((String emp){
-                          return DropdownMenuItem(value:emp,child:Text(emp,overflow: TextOverflow.ellipsis));}).toList()
+                          return DropdownMenuItem(value:emp,child:AutoSizeText(emp,overflow: TextOverflow.ellipsis));}).toList()
                         , onChanged:(employi)
                     {
                       setState(() {
@@ -359,8 +372,34 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                       });
                     }
                     ),
-                  ),
+                  )
                 ),
+                  SizedBox(
+                    width: 125,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child:  DropdownButton(
+    value:requesttype ,
+    items:[
+    DropdownMenuItem(value:'Complain',child: Text('Complain'),),
+    DropdownMenuItem(value:'Service',child: Text('Service'),),
+    DropdownMenuItem(value:'Installation',child: Text('Installation')),
+    DropdownMenuItem(value:'demo',child:Text('demo')),
+    ] , onChanged:(servicetype){
+    setState(() {
+    requesttype=servicetype;
+    });
+    } ),
+
+
+                      ),
+                    ),
+
+                    ]
+                ),
+                ElevatedButton(onPressed: (){
+                  Searchcomplaints();
+                }, child:Text("Search request"))
               ],
             ),
           ),

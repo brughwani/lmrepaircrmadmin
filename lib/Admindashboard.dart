@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:lmrepaircrmadmin/addemployee.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'dealerfetcher.dart';
 
 class CRMDashboard extends StatefulWidget {
   @override
@@ -19,7 +20,10 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
   String? selectedProduct;
   DateTime? selectedDate;
   String? requesttype;
+  String? source;
+  String? byd;
   var requesttypes=['Installation','Demo','Service','Complain'];
+  var bydate=['CompDate','SchedDate','VisitDate','SolveDate'];
 
   List<String> employees = [];
   List<String> products = [];
@@ -27,7 +31,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
   List<String> dealerNames = [];
   List<String> categories = [];
 
-  final TextEditingController dateController = TextEditingController();
+  //final TextEditingController dateController = TextEditingController();
   final TextEditingController fromDateController = TextEditingController();
   final TextEditingController toDateController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
@@ -84,32 +88,32 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
     }
   }
 
-  Future<void> fetchLocation() async {
-    final response = await http.get(
-      Uri.parse('https://crmvercelfun.vercel.app/api/location'),
-      headers: {'Content-Type': 'application/json'},
-    );
-    if (response.statusCode == 200) {
-      final List<dynamic> locationList = json.decode(response.body);
-      setState(() {
-        locations = locationList.map((location) => location.toString()).toList();
-      });
-    }
-  }
-
-  Future<void> fetchDealer(String loc) async {
-    final response = await http.get(
-      Uri.parse("https://crmvercelfun.vercel.app/api/dealer?locality=$loc"),
-      headers: {'Content-Type': 'application/json'},
-    );
-    if (response.statusCode == 200) {
-      final List<dynamic> dealers = json.decode(response.body);
-      setState(() {
-        dealerNames = dealers.map((dealer) => dealer['dealerName'].toString()).toList();
-        selectedDealer = null;
-      });
-    }
-  }
+  // Future<void> fetchLocation() async {
+  //   final response = await http.get(
+  //     Uri.parse('https://crmvercelfun.vercel.app/api/location'),
+  //     headers: {'Content-Type': 'application/json'},
+  //   );
+  //   if (response.statusCode == 200) {
+  //     final List<dynamic> locationList = json.decode(response.body);
+  //     setState(() {
+  //       locations = locationList.map((location) => location.toString()).toList();
+  //     });
+  //   }
+  // }
+  //
+  // Future<void> fetchDealer(String loc) async {
+  //   final response = await http.get(
+  //     Uri.parse("https://crmvercelfun.vercel.app/api/dealer?locality=$loc"),
+  //     headers: {'Content-Type': 'application/json'},
+  //   );
+  //   if (response.statusCode == 200) {
+  //     final List<dynamic> dealers = json.decode(response.body);
+  //     setState(() {
+  //       dealerNames = dealers.map((dealer) => dealer['dealerName'].toString()).toList();
+  //       selectedDealer = null;
+  //     });
+  //   }
+  // }
 
   Future<void> selectDate(BuildContext context, TextEditingController controller) async {
     final DateTime? picked = await showDatePicker(
@@ -207,16 +211,27 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: TextFormField(
-                          controller: dateController,
-                          decoration: InputDecoration(
-                            labelText: 'By Date',
-                            hintText: 'Complaints Solved By Date',
-                            border: OutlineInputBorder(),
+                        child:
+                        SizedBox(
+                          width: 125,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child:  DropdownButton(
+                                value:byd ,
+                                items:[
+                                  DropdownMenuItem(value:'Complain Date',child: Text('Compdate'),),
+                                  DropdownMenuItem(value:'SolveDate',child: Text('SolveDate'),),
+                                  DropdownMenuItem(value:'VisitDate',child: Text('VisitDate')),
+                                  DropdownMenuItem(value:'Scheduled date',child:Text('SchedDate')),
+                                ] , onChanged:(b){
+                              setState(() {
+                                byd=b;
+                              });
+                            } ),
                           ),
-                          readOnly: true,
-                          onTap: () => selectDate(context, dateController),
                         ),
+
+
                       ),
                     ),
                     Expanded(
@@ -374,6 +389,24 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                     ),
                   )
                 ),
+                    SizedBox(
+                    width: 125,
+                    child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child:  DropdownButton(
+                    value:source ,
+                    items:[
+                    DropdownMenuItem(value:'phone',child: Text('phone'),),
+                    DropdownMenuItem(value:'whatsapp',child: Text('whatsapp'),),
+
+    ] , onChanged:(s){
+    setState(() {
+    source=s;
+    });
+    } ),
+    ),
+    )
+                  ,
                   SizedBox(
                     width: 125,
                     child: Padding(

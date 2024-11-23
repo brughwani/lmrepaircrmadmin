@@ -43,7 +43,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    fetchLocation();
+    //fetchLocation();
     fetchCategories();
     fetchEmployees();
   }
@@ -295,7 +295,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                             onChanged: (newValue) {
                               setState(() {
                                 selectedCity = newValue;
-                                fetchDealer(selectedCity!);
+                                //fetchDealer(selectedCity!);
                               });
                             },
                             items: locations
@@ -427,6 +427,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                     ),
                     ]
                 ),
+
                 ElevatedButton(onPressed: (){
                   Searchcomplaints();
                 }, child:Text("Search request"))

@@ -30,6 +30,14 @@ class _AddEmployeeState extends State<AddEmployee> {
   String? selectedcity;
   List<String>? locations;
   List<String>? dealers;
+
+  @override
+  void initState()
+  {
+    super.initState();
+    loadlocations();
+  }
+
   Future<void> loadlocations () async
   {
     try {
@@ -194,23 +202,26 @@ print(jsonEncode({
                     SizedBox(
                       width: 20,
                     ),
-                    DropdownButtonFormField2(
-                      value: selectedcity,
-                      isExpanded: true,
-                      decoration: InputDecoration(border: OutlineInputBorder()),
-                      onChanged: (newValue) {
-                        setState(() {
-                          selectedcity = newValue;
-                          dealerfetcher.fetchDealer(selectedcity!);
-                          //loaddealer(loc)
-                        });
-                      },
-                      items: locations
-                          ?.map((location) => DropdownMenuItem(
-                        value: location,
-                        child: Text(location,overflow: TextOverflow.visible),
-                      ))
-                          .toList(),
+                    Expanded(
+                      child: DropdownButtonFormField2(
+                        value: selectedcity,
+                        isExpanded: true,
+                        decoration: InputDecoration(border: OutlineInputBorder()),
+                        onChanged: (newValue) {
+                          setState(() {
+                            selectedcity = newValue;
+                            //dealerfetcher.fetchDealer(selectedcity!);
+                            //loaddealer(loc)
+                            loaddealer(selectedcity!);
+                          });
+                        },
+                        items: locations
+                            ?.map((location) => DropdownMenuItem(
+                          value: location,
+                          child: Text(location,overflow: TextOverflow.visible),
+                        ))
+                            .toList(),
+                      ),
                     ),
                   ],
                 ),

@@ -5,8 +5,6 @@ import 'Admindashboard.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'employeeprovider.dart';
 Future<void> main() async {
- 
-
   runApp(
       ChangeNotifierProvider(
         create: (_) => EmployeeProvider(),

@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:lmrepaircrmadmin/employeeprovider.dart';
 import 'package:provider/provider.dart';
-//import 'package:multi_select_flutter/bottom_sheet/multi_select_bottom_sheet_field.dart';
 import 'dealerfetcher.dart';
 
 class AddEmployee extends StatefulWidget {
@@ -27,9 +26,10 @@ class _AddEmployeeState extends State<AddEmployee> {
   TextEditingController address=TextEditingController();
   TextEditingController personalMobileNumber=TextEditingController();
   TextEditingController salary=TextEditingController();
+
   String? selectedValue;
- // final Map<String, bool> selectedItems = {};
-  //List<Map<String, dynamic>> employees = [];
+
+  Future<List<Map<String, dynamic>>>? _futureEmployees;
 
 
   @override
@@ -38,13 +38,13 @@ class _AddEmployeeState extends State<AddEmployee> {
   String? selectedcity;
   List<String>? locations;
   List<String>? dealers;
-  List<Map<String, dynamic>> options = [
-    {"label": "First name", "value": false},
-    {"label": "Last name", "value": false},
-    {"label": "address", "value": false},
-    {"label":"Phone","value":false},
-    {"label":"Salary","value":false},
-    {"label":"Role","value":false}
+  final List<String> options = [
+    "First name",
+    "Last name",
+    "address",
+    "Phone",
+    "Salary",
+    "Role",
   ];
 
 
@@ -54,9 +54,11 @@ class _AddEmployeeState extends State<AddEmployee> {
   {
     super.initState();
     loadlocations();
-    // options.forEach((item){
-    //   selectedItems[item["label"]] = false;});
-  }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final employeeProvider = context.read<EmployeeProvider>();
+      employeeProvider.loadInitialCheckboxStatuses(options);
+    });
+     }
 
   Future<void> loadlocations () async
   {
@@ -87,22 +89,6 @@ class _AddEmployeeState extends State<AddEmployee> {
     }
   }
 
-  // Future<void> fetchallemployees  (List<String> fields) async
-  // {
-  //   final String url="https://crmvercelfun.vercel.app/api/getallemployee?fields[]=$fields";
-  //   final resp= await http.get(Uri.parse(url),
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //     },
-  //   );
-  //   final List<dynamic> jsonData = jsonDecode(resp.body);
-  //
-  //   setState(() {
-  //     employees = jsonData.map((e) => Map<String, dynamic>.from(e)).toList();
-  //   });
-  //
-  //
-  // }
 
   Future<void> createRecord(String firstName, String lastName, String address, String phoneNumber, String password, String personalMobileNumber, String salary, String role) async {
     final String url = 'https://crmvercelfun.vercel.app/api/addemployee';
@@ -148,6 +134,8 @@ print(jsonEncode({
 
   @override
   Widget build(BuildContext context) {
+    final isVertical = MediaQuery.of(context).orientation == Orientation.portrait;
+
     return DefaultTabController(
       length: 2,
       child: Column(
@@ -216,92 +204,104 @@ print(jsonEncode({
           height: MediaQuery.of(context).size.height,
           child: Column(
             children: [
-              // Padding(
-              //   padding: const EdgeInsets.all(8.0),
-              //   child: Row(
-              //     children: [
-              //       Expanded(child: Padding(
-              //         padding: const EdgeInsets.all(8.0),
-              //         child: DropdownButtonFormField2(
-              //           value: selecteddealer,
-              //           isExpanded: true,
-              //           decoration: InputDecoration(border: OutlineInputBorder()),
-              //           onChanged: (value) => setState(() => selecteddealer = value),
-              //           items:
-              //               dealers?.map((dealer) => DropdownMenuItem(
-              //             value: dealer,
-              //             child: AutoSizeText(dealer, overflow: TextOverflow.visible),
-              //           ))
-              //               .toList(),
-              //         ),
-              //       ),
-              //       ),
-              //       SizedBox(
-              //         width: 20,
-              //       ),
-              //       Expanded(
-              //         child: DropdownButtonFormField2(
-              //           value: selectedcity,
-              //           isExpanded: true,
-              //           decoration: InputDecoration(border: OutlineInputBorder()),
-              //           onChanged: (newValue) {
-              //             setState(() {
-              //               selectedcity = newValue;
-              //               //dealerfetcher.fetchDealer(selectedcity!);
-              //               //loaddealer(loc)
-              //               loaddealer(selectedcity!);
-              //             });
-              //           },
-              //           items: locations
-              //               ?.map((location) => DropdownMenuItem(
-              //             value: location,
-              //             child: Text(location,overflow: TextOverflow.visible),
-              //           ))
-              //               .toList(),
-              //         ),
-              //       ),
-              //     ],
-              //   ),
-              // ),
+
              Text("Fields to be used in filtering"),
 
     Consumer<EmployeeProvider>(
       builder:(context,employeeProvider,_)
       {
-      return  Column(
+        return  Column(
         children: [
           SizedBox(
               width: 300,
-              height: 400,
+              height: 300,
               child: ListView(
-                children: options.map((item) {
+                children: options.map((option) {
                   return CheckboxListTile(
-                    title: Text(item["label"]),
-                    value: employeeProvider.selectedFields.contains([item["label"]]),
+                    title: Text(option),
+                    value: employeeProvider.selectedFields.contains(option),
                     onChanged: (bool? value) {
                       setState(() {
-                        employeeProvider.toggleFieldSelection(item["label"],value!);
-
-                        // print(item['label']);
+                        employeeProvider.toggleFieldSelection(option,value!);// print(item['label']);
                       }
-
                       );
                     },
-
                   );
                 }).toList(),
-
               ),
             ),
-          ElevatedButton(onPressed: (){
+          isVertical ? SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: FutureBuilder(
+              future: _futureEmployees, // The async method
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || (snapshot.data as List).isEmpty) {
+                  return const Center(child: Text('No employees found.'));
+                }
+                // Use the fetched employee data
+                final employees = snapshot.data as List<Map<String, dynamic>>;
+                return DataTable(
+                  columns: employeeProvider.selectedFields
+                      .map((field) => DataColumn(label: Text(field)))
+                      .toList(),
+                  rows: employees.map((emp) {
+                    return DataRow(
+                      cells: employeeProvider.selectedFields.map((field) {
+                        return DataCell(
+                          Text(emp[field]?.toString() ?? 'N/A'),
+                        );
+                      }).toList(),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
 
-            // List<String> selectedAttributes = selectedItems.entries
-            //     .where((entry) => entry.value == true)
-            //     .map((entry) => entry.key)
-            //     .toList();
-            //
-            // fetchallemployees(selectedAttributes);
-            employeeProvider.fetchEmployees(employeeProvider.selectedFields);
+
+          ):
+
+          SingleChildScrollView(
+
+            child: FutureBuilder(
+              future: _futureEmployees, // The async method
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || (snapshot.data as List).isEmpty) {
+                  return const Center(child: Text('No employees found.'));
+                }
+                // Use the fetched employee data
+                final employees = snapshot.data as List<Map<String, dynamic>>;
+                return DataTable(
+                  columns: employeeProvider.selectedFields
+                      .map((field) => DataColumn(label: Text(field)))
+                      .toList(),
+                  rows: employees.map((emp) {
+                    return DataRow(
+                      cells: employeeProvider.selectedFields.map((field) {
+                        return DataCell(
+                          Text(emp[field]?.toString() ?? 'N/A'),
+                        );
+                      }).toList(),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+          ),
+                 ElevatedButton(onPressed: (){
+
+
+            _futureEmployees=employeeProvider.fetchEmployees(employeeProvider.selectedFields) as Future<List<Map<String, dynamic>>>?;
+
+
+
            // print(selectedAttributes.runtimeType);
 
             //print(selectedItems.keys.groupListsBy(selectedItems.values.toList()[i]).);

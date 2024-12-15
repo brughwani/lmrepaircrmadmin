@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:lmrepaircrmadmin/addemployee.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-import 'dealerfetcher.dart';
+//import 'dealerfetcher.dart';
 
 class CRMDashboard extends StatefulWidget {
   @override
@@ -25,11 +25,11 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
   var requesttypes=['Installation','Demo','Service','Complain'];
   var bydate=['CompDate','SchedDate','VisitDate','SolveDate'];
 
-  List<String> employees = [];
-  List<String> products = [];
-  List<String> locations = [];
-  List<String> dealerNames = [];
-  List<String> categories = [];
+  List<String> employees = ['Select an employee'];
+  List<String> products = ['Select a product'];
+  List<String> locations = ['Select a location'];
+  List<String> dealerNames = ['Select a dealer'];
+  List<String> categories = ['Select a category'];
 
   //final TextEditingController dateController = TextEditingController();
   final TextEditingController fromDateController = TextEditingController();
@@ -43,7 +43,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    //fetchLocation();
+    fetchLocation();
     fetchCategories();
     fetchEmployees();
   }
@@ -56,7 +56,8 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
     if (response.statusCode == 200) {
       final List<dynamic> empList = json.decode(response.body);
       setState(() {
-        employees = empList.map((emp) => emp['First Name'].toString()).toList();
+        employees.addAll(empList.map((emp) => emp['First name'].toString()));
+        selectedEmployee=employees[0];
       });
     }
   }
@@ -69,7 +70,8 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
     if (response.statusCode == 200) {
       final List<dynamic> categoryList = json.decode(response.body);
       setState(() {
-        categories = categoryList.map((category) => category.toString()).toList();
+        categories.addAll(categoryList.map((category) => category.toString()));
+        selectedCategory=categories[0];
       });
     }
   }
@@ -82,38 +84,40 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
     if (response.statusCode == 200) {
       final List<dynamic> productList = json.decode(response.body);
       setState(() {
-        products = productList.map((e) => e['productName'].toString()).toList();
-        selectedProduct = null;
+        products.addAll(productList.map((e) => e['productName'].toString()));
+        selectedProduct = products[0];
       });
     }
   }
 
-  // Future<void> fetchLocation() async {
-  //   final response = await http.get(
-  //     Uri.parse('https://crmvercelfun.vercel.app/api/location'),
-  //     headers: {'Content-Type': 'application/json'},
-  //   );
-  //   if (response.statusCode == 200) {
-  //     final List<dynamic> locationList = json.decode(response.body);
-  //     setState(() {
-  //       locations = locationList.map((location) => location.toString()).toList();
-  //     });
-  //   }
-  // }
-  //
-  // Future<void> fetchDealer(String loc) async {
-  //   final response = await http.get(
-  //     Uri.parse("https://crmvercelfun.vercel.app/api/dealer?locality=$loc"),
-  //     headers: {'Content-Type': 'application/json'},
-  //   );
-  //   if (response.statusCode == 200) {
-  //     final List<dynamic> dealers = json.decode(response.body);
-  //     setState(() {
-  //       dealerNames = dealers.map((dealer) => dealer['dealerName'].toString()).toList();
-  //       selectedDealer = null;
-  //     });
-  //   }
-  // }
+  Future<void> fetchLocation() async {
+    final response = await http.get(
+      Uri.parse('https://crmvercelfun.vercel.app/api/location'),
+      headers: {'Content-Type': 'application/json'},
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> locationList = json.decode(response.body);
+      setState(() {
+        locations.addAll(locationList.map((location) => location.toString()));
+        locations.sort((a, b) => a.compareTo(b));
+        selectedCity=locations[0];
+      });
+    }
+  }
+
+  Future<void> fetchDealer(String loc) async {
+    final response = await http.get(
+      Uri.parse("https://crmvercelfun.vercel.app/api/dealer?locality=$loc"),
+      headers: {'Content-Type': 'application/json'},
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> dealers = json.decode(response.body);
+      setState(() {
+        dealerNames.addAll(dealers.map((dealer) => dealer['dealerName'].toString()));
+        selectedDealer = dealerNames[0];
+      });
+    }
+  }
 
   Future<void> selectDate(BuildContext context, TextEditingController controller) async {
     final DateTime? picked = await showDatePicker(
@@ -129,29 +133,102 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
       });
     }
   }
-  Future<void> Searchcomplaints() async
-  {
+  // Future<void> Searchcomplaints({String? fromdate,String? todate,String? name,String? phone,String? village,String? dealer,String? category,String? product,String? allotedto,String? servicetype,String? source}) async
+  // {
+  //  // final url="https://crmvercelfun.vercel.app/api/searchcomplaint";
+  //   var query={
+  //     "fields": {
+  //       // "fromdate":fromdate,
+  //       // "todate":todate,
+  //       "fromdate": fromdate ?? "",
+  //       "todate": todate ?? "",
+  //       "Customer name": name ?? "",
+  //       "Phone Number": phone ?? "",
+  //       "Location": village ?? "",
+  //       "Dealer": dealer ?? "",
+  //       "productcategory": category ?? "",
+  //       "productname": product ?? "",
+  //       "allotment": allotedto ?? "",
+  //       "Service type": servicetype ?? "",
+  //       "Source by": source ?? "",
+  //       // "Customer name":name,
+  //       // "Phone Number":phone,
+  //       // "Location":village,
+  //       // "Dealer":dealer,
+  //       // "productcategory":category,
+  //       // "productname":product,
+  //       // "allotment":allotedto,
+  //       // "Service type":servicetype,
+  //       // "Source by":source
+  //     }
+  //   };
+  //
+  //   final urlq= Uri.https("crmvercelfun.vercel.app","api/searchcomplaint",query);
+  //
+  //
+  //
+  //   final response=await http.get(urlq,headers: {'Content-Type': 'application/json'},
+  //   );
+  //   print(response.body);
+  //
+  // }
+  //
 
+  Future<void> Searchcomplaints({
+    String? fromdate,
+    String? todate,
+    String? name,
+    String? phone,
+    String? village,
+    String? dealer,
+    String? category,
+    String? product,
+    String? allotedto,
+    String? servicetype,
+    String? source,
+  }) async {
+    // Create a flat map for query parameters
+    var query = {
+      if (fromdate != null && fromdate.isNotEmpty) "fromdate": fromdate,
+      if (todate != null && todate.isNotEmpty) "todate": todate,
+      if (name != null && name.isNotEmpty) "Customer name": name,
+      if (phone != null && phone.isNotEmpty) "Phone Number": phone,
+      if (village != null && village.isNotEmpty) "Location": village,
+      if (dealer != null && dealer.isNotEmpty) "Dealer": dealer,
+      if (category != null && category.isNotEmpty) "productcategory": category,
+      if (product != null && product.isNotEmpty) "productname": product,
+      if (allotedto != null && allotedto.isNotEmpty) "allotment": allotedto,
+      if (servicetype != null && servicetype.isNotEmpty) "Service type": servicetype,
+      if (source != null && source.isNotEmpty) "Source by": source,
+    };
+
+    // Construct the URI correctly without leading slash in the path
+    final urlq = Uri.https("crmvercelfun.vercel.app", "/api/complaintfiltering", query);
+
+    // Perform the HTTP GET request
+    final response = await http.get(urlq, headers: {'Content-Type': 'application/json'});
+
+    // Handle the response as needed
+    print(response.body);
   }
-
   @override
   void dispose() {
     _tabController?.dispose();
     super.dispose();
   }
 
-  bool validateInput() {
-    if (nameController.text.isEmpty ||
-        mobileController.text.length != 10 ||
-        selectedCity == null ||
-        selectedDealer == null ||
-        selectedCategory == null ||
-        selectedProduct == null ||
-        selectedEmployee == null) {
-      return false;
-    }
-    return true;
-  }
+  // bool validateInput() {
+  //   if (nameController.text.isEmpty ||
+  //       mobileController.text.length != 10 ||
+  //       selectedCity == null ||
+  //       selectedDealer == null ||
+  //       selectedCategory == null ||
+  //       selectedProduct == null ||
+  //       selectedEmployee == null) {
+  //     return false;
+  //   }
+  //   return true;
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -224,14 +301,14 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                                   DropdownMenuItem(value:'VisitDate',child: Text('VisitDate')),
                                   DropdownMenuItem(value:'Scheduled date',child:Text('SchedDate')),
                                 ] , onChanged:(b){
-                              setState(() {
-                                byd=b;
-                              });
+
+                                    setState(() {
+                                      byd = b;
+                                    });
+
                             } ),
                           ),
                         ),
-
-
                       ),
                     ),
                     Expanded(
@@ -240,7 +317,12 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                         child: DropdownButtonFormField<String>(
                           hint: Text('Complaint Status'),
                           value: selectedStatus,
-                          onChanged: (value) => setState(() => selectedStatus = value),
+                          onChanged: (value)
+                          {
+
+                                selectedStatus=value;
+
+                          },
                           decoration: InputDecoration(
                             border: OutlineInputBorder(),
                             contentPadding: EdgeInsets.symmetric(horizontal: 10),
@@ -249,8 +331,10 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                               .map((status) => DropdownMenuItem(
                             child: Text(status),
                             value: status,
-                          ))
+                          ),
+                          )
                               .toList(),
+
                         ),
                       ),
                     ),
@@ -295,7 +379,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                             onChanged: (newValue) {
                               setState(() {
                                 selectedCity = newValue;
-                                //fetchDealer(selectedCity!);
+                                fetchDealer(selectedCity!);
                               });
                             },
                             items: locations
@@ -312,11 +396,11 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                           constraints:BoxConstraints(maxWidth: MediaQuery.of(context).size.width*0.20,maxHeight: 170),
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
-                            child: DropdownButtonFormField2(
+                            child:DropdownButtonFormField2(
                               value: selectedDealer,
                               isExpanded: true,
                               decoration: InputDecoration(border: OutlineInputBorder()),
-                              onChanged: (value) => setState(() => selectedDealer = value),
+                              onChanged: (value) => setState(() => selectedDealer = value!),
                               items: dealerNames
                                   .map((dealer) => DropdownMenuItem(
                                 value: dealer,
@@ -328,7 +412,6 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                         ),
     ]
                     ),
-
                     ConstrainedBox
                       (constraints:BoxConstraints(maxWidth: MediaQuery.of(context).size.width*0.2,maxHeight: 170),
                       child: Padding(
@@ -366,7 +449,6 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                         ),
                       ),
                     ),
-
                   ],
                 ),
                 Row(
@@ -399,13 +481,17 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                     DropdownMenuItem(value:'phone',child: Text('phone'),),
                     DropdownMenuItem(value:'whatsapp',child: Text('whatsapp'),),
 
-    ] , onChanged:(s){
-    setState(() {
-    source=s;
-    });
-    } ),
+    ] , onChanged:(s) {
+
+                        setState(() {
+                          source = s;
+                        });
+                      }
+
+                    ),
     ),
     )
+
                   ,
                   SizedBox(
                     width: 125,
@@ -418,18 +504,35 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
     DropdownMenuItem(value:'Service',child: Text('Service'),),
     DropdownMenuItem(value:'Installation',child: Text('Installation')),
     DropdownMenuItem(value:'demo',child:Text('demo')),
-    ] , onChanged:(servicetype){
-    setState(() {
-    requesttype=servicetype;
-    });
-    } ),
+    ] , onChanged:(servicetype) {
+
+                          setState(() {
+                            requesttype = servicetype;
+                          });
+                        }
+
+    ),
                     ),
                     ),
                     ]
                 ),
 
                 ElevatedButton(onPressed: (){
-                  Searchcomplaints();
+                  Searchcomplaints(
+                  //     fromDateController.text,toDateController.text,nameController.text,mobileController.text,selectedCity!,selectedDealer!,selectedCategory!,selectedProduct!,selectedEmployee!,requesttype!,source!
+                  //
+                      fromdate: fromDateController.text.isNotEmpty ? fromDateController.text : null,
+                      todate: toDateController.text.isNotEmpty ? toDateController.text : null,
+                      name: nameController.text.isNotEmpty ? nameController.text : null,
+                      phone: mobileController.text.length == 10 ? mobileController.text : null, // Ensure valid phone number
+                      village: selectedCity?.isNotEmpty == true ? selectedCity : null,
+                      dealer: selectedDealer?.isNotEmpty == true ? selectedDealer : null,
+                      category: selectedCategory?.isNotEmpty == true ? selectedCategory : null,
+                      product: selectedProduct?.isNotEmpty == true ? selectedProduct : null,
+                      allotedto: selectedEmployee?.isNotEmpty == true ? selectedEmployee : null,
+                      servicetype: requesttype?.isNotEmpty == true ? requesttype : null,
+                      source: source?.isNotEmpty == true ? source : null
+                      );
                 }, child:Text("Search request"))
               ],
             ),

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:lmrepaircrmadmin/addemployee.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:lmrepaircrmadmin/allotment.dart';
 //import 'dealerfetcher.dart';
 
 class CRMDashboard extends StatefulWidget {
@@ -42,7 +43,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     fetchLocation();
     fetchCategories();
     fetchEmployees();
@@ -50,7 +51,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
 
   Future<void> fetchEmployees() async {
     final response = await http.get(
-      Uri.parse('https://crmvercelfun.vercel.app/api/getallkarigar?Role=Karigar'),
+      Uri.parse('https://crmvercelfun.vercel.app/api/employeeService?getKarigars=true'),
       headers: {'Content-Type': 'application/json'},
     );
     if (response.statusCode == 200) {
@@ -64,7 +65,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
 
   Future<void> fetchCategories() async {
     final response = await http.get(
-      Uri.parse('https://crmvercelfun.vercel.app/api/category'),
+      Uri.parse('https://crmvercelfun.vercel.app/api/productService?getCategories=true'),
       headers: {'Content-Type': 'application/json'},
     );
     if (response.statusCode == 200) {
@@ -78,7 +79,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
 
   Future<void> fetchProductsForCategory(String categoryId) async {
     final response = await http.get(
-      Uri.parse('https://crmvercelfun.vercel.app/api/product?category=$categoryId'),
+      Uri.parse('https://crmvercelfun.vercel.app/api/productService?category=$categoryId'),
       headers: {'Content-Type': 'application/json'},
     );
     if (response.statusCode == 200) {
@@ -92,7 +93,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
 
   Future<void> fetchLocation() async {
     final response = await http.get(
-      Uri.parse('https://crmvercelfun.vercel.app/api/location'),
+      Uri.parse('https://crmvercelfun.vercel.app/api/dealerService?getLocations=true'),
       headers: {'Content-Type': 'application/json'},
     );
     if (response.statusCode == 200) {
@@ -107,7 +108,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
 
   Future<void> fetchDealer(String loc) async {
     final response = await http.get(
-      Uri.parse("https://crmvercelfun.vercel.app/api/dealer?locality=$loc"),
+      Uri.parse("https://crmvercelfun.vercel.app/api/dealerService?locality=$loc"),
       headers: {'Content-Type': 'application/json'},
     );
     if (response.statusCode == 200) {
@@ -133,46 +134,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
       });
     }
   }
-  // Future<void> Searchcomplaints({String? fromdate,String? todate,String? name,String? phone,String? village,String? dealer,String? category,String? product,String? allotedto,String? servicetype,String? source}) async
-  // {
-  //  // final url="https://crmvercelfun.vercel.app/api/searchcomplaint";
-  //   var query={
-  //     "fields": {
-  //       // "fromdate":fromdate,
-  //       // "todate":todate,
-  //       "fromdate": fromdate ?? "",
-  //       "todate": todate ?? "",
-  //       "Customer name": name ?? "",
-  //       "Phone Number": phone ?? "",
-  //       "Location": village ?? "",
-  //       "Dealer": dealer ?? "",
-  //       "productcategory": category ?? "",
-  //       "productname": product ?? "",
-  //       "allotment": allotedto ?? "",
-  //       "Service type": servicetype ?? "",
-  //       "Source by": source ?? "",
-  //       // "Customer name":name,
-  //       // "Phone Number":phone,
-  //       // "Location":village,
-  //       // "Dealer":dealer,
-  //       // "productcategory":category,
-  //       // "productname":product,
-  //       // "allotment":allotedto,
-  //       // "Service type":servicetype,
-  //       // "Source by":source
-  //     }
-  //   };
-  //
-  //   final urlq= Uri.https("crmvercelfun.vercel.app","api/searchcomplaint",query);
-  //
-  //
-  //
-  //   final response=await http.get(urlq,headers: {'Content-Type': 'application/json'},
-  //   );
-  //   print(response.body);
-  //
-  // }
-  //
+
 
   Future<void> Searchcomplaints({
     String? fromdate,
@@ -239,7 +201,8 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
           controller: _tabController,
           tabs: [
             Tab(icon: Icon(Icons.person), text: "Employee"),
-            Tab(icon: Icon(Icons.note), text: "Complaints & Requests"),
+            Tab(icon: Icon(Icons.filter_list_rounded), text: "Complaints & Requests Filtering"),
+            Tab(icon:Icon(Icons.comment),text:"View and allot complaints")
           ],
         ),
       ),
@@ -537,6 +500,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
               ],
             ),
           ),
+          AllotComplaints()
         ],
       ),
     );

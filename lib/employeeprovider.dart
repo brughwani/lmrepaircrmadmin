@@ -35,7 +35,7 @@ class EmployeeProvider with ChangeNotifier {
   }
 
   Future<List<Map<String, dynamic>>> fetchEmployees(List<String> fields) async {
-    final url = "https://crmvercelfun.vercel.app/api/getallemployee?fields[]=${fields}";
+    final url = "https://crmvercelfun.vercel.app/api/employeeService?fields=${fields}";
     final response = await http.get(
         Uri.parse(url), headers: {'Content-Type': 'application/json'});
 

@@ -91,7 +91,7 @@ class _AddEmployeeState extends State<AddEmployee> {
 
 
   Future<void> createRecord(String firstName, String lastName, String address, String phoneNumber, String password, String personalMobileNumber, String salary, String role) async {
-    final String url = 'https://crmvercelfun.vercel.app/api/addemployee';
+    final String url = 'https://crmvercelfun.vercel.app/api/employeeService';
     // Prepare the data to be sent
     final response = await http.post(
       Uri.parse(url),
@@ -101,8 +101,8 @@ class _AddEmployeeState extends State<AddEmployee> {
       body: jsonEncode(
         { "fields":
          {
-          "First Name": firstName,
-          "Last Name": lastName,
+          "First name": firstName,
+          "Last name": lastName,
           "Address": address,
           "Phone Number": phoneNumber,
           "Password": password,
@@ -114,16 +114,16 @@ class _AddEmployeeState extends State<AddEmployee> {
       ),
 
     );
-
-print(jsonEncode({
-  "First Name": firstName,
-  "Last Name": lastName,
-  "Address": address,
-  "Phone Number": phoneNumber,
-  "Password": password,
-  "Personal Mobile Number": personalMobileNumber,
-  "Salary": salary,
-}));
+//
+// print(jsonEncode({
+//   "First Name": firstName,
+//   "Last Name": lastName,
+//   "Address": address,
+//   "Phone Number": phoneNumber,
+//   "Password": password,
+//   "Personal Mobile Number": personalMobileNumber,
+//   "Salary": salary,
+// }));
     if (response.statusCode == 200) {
       
       print('Record created successfully: ${response.body}');

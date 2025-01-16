@@ -4,7 +4,9 @@ import 'package:http/http.dart' as http;
 import 'package:lmrepaircrmadmin/addemployee.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:lmrepaircrmadmin/allotment.dart';
+import 'package:lmrepaircrmadmin/allotments.dart';
+
+//import 'allotments.dart';
 //import 'dealerfetcher.dart';
 
 class CRMDashboard extends StatefulWidget {
@@ -500,7 +502,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
               ],
             ),
           ),
-          AllotComplaints()
+          AllotComplaint()
         ],
       ),
     );

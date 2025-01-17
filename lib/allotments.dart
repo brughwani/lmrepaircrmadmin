@@ -11,6 +11,10 @@ class AllotComplaint extends StatefulWidget {
 }
 class _AllotComplaintState extends State<AllotComplaint> {
 
+  final _formKey = GlobalKey<FormState>();
+  DateTime? selectedDate;
+  DateTime? selectedDate2;
+
   late List<Map<String, dynamic>> complaints;
 
 // Map<String, Map<String, dynamic>> pendingUpdates = {};
@@ -29,21 +33,23 @@ class _AllotComplaintState extends State<AllotComplaint> {
   List<String> employees = [];
   String? allottedemployee;
   String? status;
+  Map<String, TextEditingController> wdateControllers = {};
+  Map<String, TextEditingController> pdateControllers = {};
+
 
   @override
   void initState() {
     super.initState();
     _fetchDataFuture = fetchAllData();
-    //  complaints=fetchallrequests();
-    //   fetchallemployees();
-    // fetchallrequests().then((_) {
-    //   // Fetch current allotments and statuses for all records
-    //   // for (var id in recordid) {
-    //   //   getCurrentallotmentandStatus(id);
-    //   // }
-    // });
-    // records.map((r)=>(  getCurrentallotmentandStatus(r);));
+
   }
+  @override
+  void dispose() {
+    wdateControllers.values.forEach((controller)=>controller.dispose());
+    pdateControllers.values.forEach((controller)=>controller.dispose());
+    super.dispose();
+  }
+
 
   Future<void> updaterecord(String recordId, String fieldName,
       String newValues) async
@@ -87,37 +93,11 @@ class _AllotComplaintState extends State<AllotComplaint> {
           }
         });
         print(6);
-        //  String recordId = detail['recordId'];
-        //  print(6.5);
-        // // String a= detail['currentStatus'];
-        //  statuses!.add(detail['currentStatus']);
-        //  //print(7);
-        //
-        //  String currentAllotment = detail['currentAllotment'];
-        //  allotment!.add(detail['currentAllotment']);
-        //
-        //  // print(recordId);
-        // print(a);
-        // print(currentAllotment);
+
       }
-//     }
-//
-//
-//
-//       List<Map<String, dynamic>> currentDetails = response['currentDetails'][0];
-//     print(1.55);
-// //    a = {for (var detail in response['currentDetails'][0]) detail['recordId']: detail};
-//     a = {for (var detail in currentDetails) detail['recordId']: detail['currentAllotment']};
-//     print(1.65);
-//     print(a);
-//     print(2.5);
-      //print(a);
-//  print(allotment);
-      // print(allotments);
+
     }
-    //print(allotment);
-    //print(statuses);
-    print(allotments);
+
   }
 
   Future<void> fetchallemployees() async
@@ -177,12 +157,51 @@ class _AllotComplaintState extends State<AllotComplaint> {
     }
   }
 
+  Future<void> _selectwarrantyDate(BuildContext context,String id,DateTime Registerdate) async {
+    final DateTime? picked = await showDatePicker(
+ //     fieldLabelText: 'warranty expiry date',
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      initialDate: Registerdate,
+
+     initialDatePickerMode: DatePickerMode.day,
+    );
+    if (picked != null) {
+      setState(() {
+        selectedDate2 = picked;
+      wdateControllers[id]!.text = "${picked.toLocal()}".split(' ')[0]; // Update the text field with the selected date
+//updaterecord(id, fieldName, newValues)
+      newValues[id] = {"warranty expiry date": "${picked.toLocal()}".split(' ')[0]};
+      });
+    }
+  }
+
+
+  Future<void> _selectpurchaseDate(BuildContext context,String id,DateTime Registerdate) async {
+    final DateTime? picked = await showDatePicker(
+      //     fieldLabelText: 'warranty expiry date',
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      initialDate: Registerdate,
+
+      initialDatePickerMode: DatePickerMode.day,
+    );
+    if (picked != null) {
+      setState(() {
+        selectedDate = picked;
+        pdateControllers[id]!.text = "${picked.toLocal()}".split(' ')[0]; // Update the text field with the selected date
+        newValues[id] = {"Purchase Date": "${picked.toLocal()}".split(' ')[0]};
+      });
+    }
+  }
   Future<void> fetchAllData() async {
-    print(1);
+    //print(1);
     await fetchallemployees();
     await fetchallrequests();
     await getCurrentallotmentandStatus(recordid);
-    print(1.5);
+  //  print(1.5);
   }
 
   @override
@@ -249,18 +268,17 @@ class _AllotComplaintState extends State<AllotComplaint> {
                           .values.first['allotment'] : null;
                       var currentStatus = allotment1.isNotEmpty ? allotment1
                           .values.first['status'] : null;
+
+                      if (!wdateControllers.containsKey(complaint['id'])) {
+                        wdateControllers[complaint['id']] = TextEditingController(text: complaint['fields']['warranty end']);
+                      }
+
+                      if (!pdateControllers.containsKey(complaint['id'])) {
+                        pdateControllers[complaint['id']] = TextEditingController(text: complaint['fields']['Purchase Date']);
+                      }
+
                       return DataRow(
-                        //               selected: selectedRecords.contains(complaint['id']),
-                        //
-                        // onSelectChanged: (selected) {
-                        //   setState(() {
-                        //     if (selected!) {
-                        //       selectedRecords.add(complaint['id']);
-                        //     } else {
-                        //       selectedRecords.remove(complaint['id']);
-                        //     }
-                        //   });
-                        // },
+
                         cells: [
                           DataCell(Checkbox(
                             value: selectedRecords.contains(complaint['id']),
@@ -278,9 +296,15 @@ class _AllotComplaintState extends State<AllotComplaint> {
                           DataCell(TextFormField(
                             initialValue: complaint['fields']['Name'],
                             onChanged: (newvalue) {
-                              updaterecord(
-                                  complaint['id'], 'Customer name', newvalue);
-                            },)),
+
+                              newValues[complaint['id']] = {"Customer name": newvalue};
+
+                              // updaterecord(
+                              //     complaint['id'], 'Customer name', newvalue);
+                              //
+                            },
+
+                          )),
                           DataCell(
                               StatefulBuilder(builder: (context, setState) {
                                 return DropdownButton(
@@ -336,8 +360,16 @@ class _AllotComplaintState extends State<AllotComplaint> {
                             },
                           )),
                           DataCell(Text(complaint['fields']['city'])),
-                          DataCell(Text(complaint['fields']['warranty end'])),
-                          DataCell(Text(complaint['fields']['Purchase Date'])),
+                          DataCell(TextFormField(
+                              controller: wdateControllers[complaint['id']],
+                      readOnly: true,
+                              onTap:()=>_selectwarrantyDate(context,complaint['id'],DateTime.parse(complaint['fields']['warranty end'].toString())))),
+
+                          DataCell(TextFormField(
+                              controller: pdateControllers[complaint['id']],
+                              readOnly: true,
+                              onTap:()=>_selectpurchaseDate(context,complaint['id'],DateTime.parse(complaint['fields']['warranty end'].toString())))),
+
                         ],
                       );
                     }).toList(),

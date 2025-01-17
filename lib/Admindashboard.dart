@@ -21,6 +21,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
   String? selectedEmployee;
   String? selectedCategory;
   String? selectedProduct;
+  String? brandselected;
   DateTime? selectedDate;
   String? requesttype;
   String? source;
@@ -33,6 +34,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
   List<String> locations = ['Select a location'];
   List<String> dealerNames = ['Select a dealer'];
   List<String> categories = ['Select a category'];
+  List<String> brand=['Select a brand'];
 
   //final TextEditingController dateController = TextEditingController();
   final TextEditingController fromDateController = TextEditingController();
@@ -47,9 +49,10 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     fetchLocation();
-    fetchCategories();
+    fetchBrands();
     fetchEmployees();
   }
+
 
   Future<void> fetchEmployees() async {
     final response = await http.get(
@@ -64,14 +67,28 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
       });
     }
   }
-
-  Future<void> fetchCategories() async {
+Future<void> fetchBrands() async {
     final response = await http.get(
-      Uri.parse('https://crmvercelfun.vercel.app/api/productService?getCategories=true'),
+      Uri.parse('https://crmvercelfun.vercel.app/api/productService?level=brands'),
       headers: {'Content-Type': 'application/json'},
     );
     if (response.statusCode == 200) {
-      final List<dynamic> categoryList = json.decode(response.body);
+      final List<dynamic> brandList = json.decode(response.body);
+      setState(() {
+        brand.addAll(brandList.map((brand) => brand.toString()));
+        brandselected=brand[0];
+       // selectedProduct = products[0];
+      });
+    }
+  }
+  Future<void> fetchCategories(String Brand) async {
+    final response = await http.get(
+      Uri.parse('https://crmvercelfun.vercel.app/api/productService?level=categories&brand=$Brand'),
+      headers: {'Content-Type': 'application/json'},
+    );
+    if (response.statusCode == 200) {
+      print(jsonDecode(response.body));
+      final List<dynamic> categoryList = jsonDecode(response.body);
       setState(() {
         categories.addAll(categoryList.map((category) => category.toString()));
         selectedCategory=categories[0];
@@ -79,15 +96,17 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
     }
   }
 
-  Future<void> fetchProductsForCategory(String categoryId) async {
+  Future<void> fetchProductsForCategory(String Brand,String categoryId) async {
     final response = await http.get(
-      Uri.parse('https://crmvercelfun.vercel.app/api/productService?category=$categoryId'),
+      Uri.parse('https://crmvercelfun.vercel.app/api/productService?level=products&brand=$Brand&category=$categoryId'),
       headers: {'Content-Type': 'application/json'},
     );
     if (response.statusCode == 200) {
       final List<dynamic> productList = json.decode(response.body);
       setState(() {
-        products.addAll(productList.map((e) => e['productName'].toString()));
+        print(productList);
+        products.addAll(productList.map((e) => e['name'].toString()));
+
         selectedProduct = products[0];
       });
     }
@@ -259,7 +278,7 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
                             child:  DropdownButton(
-                                value:byd ,
+                                value:byd,
                                 items:[
                                   DropdownMenuItem(value:'Complain Date',child: Text('Compdate'),),
                                   DropdownMenuItem(value:'SolveDate',child: Text('SolveDate'),),
@@ -382,6 +401,24 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: DropdownButtonFormField2(
+                          decoration: InputDecoration(labelText: 'Brands', border: OutlineInputBorder()),
+                          value: brandselected,
+                          isExpanded: true,
+                          items: brand.map((c) => DropdownMenuItem(value: c, child: Text(c,overflow: TextOverflow.visible))).toList(),
+                          onChanged: (newValue) {
+                            setState(() {
+                              brandselected = newValue as String?;
+                              if (newValue != null) fetchCategories(newValue);
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                    ConstrainedBox
+                      (constraints:BoxConstraints(maxWidth: MediaQuery.of(context).size.width*0.2,maxHeight: 170),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: DropdownButtonFormField2(
                           decoration: InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
                           value: selectedCategory,
                           isExpanded: true,
@@ -389,35 +426,36 @@ class _CRMDashboardState extends State<CRMDashboard> with SingleTickerProviderSt
                           onChanged: (newValue) {
                             setState(() {
                               selectedCategory = newValue as String?;
-                              if (newValue != null) fetchProductsForCategory(newValue);
+                              if (newValue != null) fetchProductsForCategory(brandselected!,selectedCategory!);
                             });
                           },
                         ),
                       ),
                     ),
-                    ConstrainedBox
-                    (constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width*0.2,maxHeight: 170),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: DropdownButtonFormField2(
-                            value: selectedProduct,
-                           isExpanded: true,
-                        //    dropdownStyleData: DropdownStyleData(maxHeight: 150),
-                            items:products.map((String product){
-                              return DropdownMenuItem(value:product,child:AutoSizeText(product,overflow: TextOverflow.visible));}).toList()
-                            , onChanged:(productselected)
-                        {
-                          setState(() {
-                            selectedProduct=productselected;
-                          });
-                        }
-                        ),
-                      ),
-                    ),
+
                   ],
                 ),
                 Row(
                 children:[
+                  ConstrainedBox
+                    (constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width*0.2,maxHeight: 170),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: DropdownButtonFormField2(
+                          value: selectedProduct,
+                          isExpanded: true,
+                          //    dropdownStyleData: DropdownStyleData(maxHeight: 150),
+                          items:products.map((String product){
+                            return DropdownMenuItem(value:product,child:AutoSizeText(product,overflow: TextOverflow.visible));}).toList()
+                          , onChanged:(productselected)
+                      {
+                        setState(() {
+                          selectedProduct=productselected;
+                        });
+                      }
+                      ),
+                    ),
+                  ),
                 SizedBox(
                   width: MediaQuery.of(context).size.width * 0.2,
                   child: Padding(
